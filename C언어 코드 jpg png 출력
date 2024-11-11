@@ -1,0 +1,121 @@
+#include <SDL.h>
+#include <SDL_image.h>
+#include <stdio.h>
+
+int main(int argc, char* argv[]) {
+    // SDL 초기화
+    if (SDL_Init(SDL_INIT_VIDEO) < 0) {
+        printf("SDL_Init Error: %s\n", SDL_GetError());
+        return 1;
+    }
+
+    // SDL_image 초기화 (PNG, JPG 지원)
+    if (!(IMG_Init(IMG_INIT_PNG | IMG_INIT_JPG) & (IMG_INIT_PNG | IMG_INIT_JPG))) {
+        printf("IMG_Init Error: %s\n", IMG_GetError());
+        SDL_Quit();
+        return 1;
+    }
+
+    // 윈도우 생성
+    SDL_Window* window = SDL_CreateWindow("SDL Image Example",
+        SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED,
+        800, 600, SDL_WINDOW_SHOWN);
+    if (!window) {
+        printf("SDL_CreateWindow Error: %s\n", SDL_GetError());
+        IMG_Quit();
+        SDL_Quit();
+        return 1;
+    }
+
+    // 렌더러 생성
+    SDL_Renderer* renderer = SDL_CreateRenderer(window, -1, SDL_RENDERER_ACCELERATED);
+    if (!renderer) {
+        printf("SDL_CreateRenderer Error: %s\n", SDL_GetError());
+        SDL_DestroyWindow(window);
+        IMG_Quit();
+        SDL_Quit();
+        return 1;
+    }
+
+    // PNG 이미지 로드
+    const char* pngPath = "jcshim.png";  // PNG 파일 경로
+    SDL_Surface* pngSurface = IMG_Load(pngPath);
+    if (!pngSurface) {
+        printf("IMG_Load (PNG) Error: %s\n", IMG_GetError());
+        SDL_DestroyRenderer(renderer);
+        SDL_DestroyWindow(window);
+        IMG_Quit();
+        SDL_Quit();
+        return 1;
+    }
+    SDL_Texture* pngTexture = SDL_CreateTextureFromSurface(renderer, pngSurface);
+    SDL_FreeSurface(pngSurface);  // 서페이스는 더 이상 필요 없음
+    if (!pngTexture) {
+        printf("SDL_CreateTexture (PNG) Error: %s\n", SDL_GetError());
+        SDL_DestroyRenderer(renderer);
+        SDL_DestroyWindow(window);
+        IMG_Quit();
+        SDL_Quit();
+        return 1;
+    }
+
+    // JPG 이미지 로드
+    const char* jpgPath = "jcshim.jpg";  // JPG 파일 경로
+    SDL_Surface* jpgSurface = IMG_Load(jpgPath);
+    if (!jpgSurface) {
+        printf("IMG_Load (JPG) Error: %s\n", IMG_GetError());
+        SDL_DestroyTexture(pngTexture);
+        SDL_DestroyRenderer(renderer);
+        SDL_DestroyWindow(window);
+        IMG_Quit();
+        SDL_Quit();
+        return 1;
+    }
+    SDL_Texture* jpgTexture = SDL_CreateTextureFromSurface(renderer, jpgSurface);
+    SDL_FreeSurface(jpgSurface);  // 서페이스는 더 이상 필요 없음
+    if (!jpgTexture) {
+        printf("SDL_CreateTexture (JPG) Error: %s\n", SDL_GetError());
+        SDL_DestroyTexture(pngTexture);
+        SDL_DestroyRenderer(renderer);
+        SDL_DestroyWindow(window);
+        IMG_Quit();
+        SDL_Quit();
+        return 1;
+    }
+
+    // 렌더링 루프
+    SDL_Event e;
+    int quit = 0;
+    while (!quit) {
+        // 이벤트 처리
+        while (SDL_PollEvent(&e)) {
+            if (e.type == SDL_QUIT) {
+                quit = 1;
+            }
+        }
+
+        // 화면을 검은색으로 채우기
+        SDL_SetRenderDrawColor(renderer, 0, 0, 0, 255);
+        SDL_RenderClear(renderer);
+
+        // 두 이미지를 렌더링
+        // PNG 이미지는 왼쪽에, JPG 이미지는 오른쪽에 표시
+        SDL_Rect pngRect = { 50, 50, 300, 200 };  // PNG 이미지 위치 및 크기
+        SDL_Rect jpgRect = { 450, 50, 300, 200 };  // JPG 이미지 위치 및 크기
+        SDL_RenderCopy(renderer, pngTexture, NULL, &pngRect);
+        SDL_RenderCopy(renderer, jpgTexture, NULL, &jpgRect);
+
+        // 렌더링된 내용 화면에 표시
+        SDL_RenderPresent(renderer);
+    }
+
+    // 자원 해제
+    SDL_DestroyTexture(pngTexture);
+    SDL_DestroyTexture(jpgTexture);
+    SDL_DestroyRenderer(renderer);
+    SDL_DestroyWindow(window);
+    IMG_Quit();
+    SDL_Quit();
+
+    return 0;
+}
